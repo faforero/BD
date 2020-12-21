@@ -1,0 +1,164 @@
+create database ejercicio;
+use ejercicio;
+
+create table factura(
+id integer primary key,fecha date,total_factura integer);
+
+create table producto(
+id_producto integer primary key, nombre varchar(50),valor integer);
+
+create table detalle(
+id_factura int, id_producto int,id_detalle int,primary key(id_factura,id_producto,id_detalle),
+cantidad int, total int);
+
+create table cliente(
+id_ced int primary key, nombre1 varchar(30),nombre2 varchar(30),apellido1 varchar(30),apellido2 varchar(30),
+edad integer);
+
+create table credito(
+id_cod int primary key, saldo integer,valor integer,monto_inicial integer);
+
+// este no es pero mire a ver :v 
+create trigger tg_update_factura
+after insert on detalle
+for each row 
+update factura set total=(select sum(total))
+from detalle 
+where 
+id__factura=new.id_factura;
+
+// este es 
+create trigger int_detalle before insert on detalle
+for each row 
+begin
+set new.total=(select(producto.valor*new.cantidad)
+from producto where new.id_producto=producto.id_producto);
+update factura set total=total+new.total
+where 
+new.id_factura=id;
+
+insert into cliente values(1,'fabian','alfredo','forero','gomez',20);
+insert into cliente values(2,'fabio','alberto','ferreira','gonzales',21);
+
+insert into credito values(1,100000,300,2000,1);
+insert into credito values(2,200000,600,4000,1);
+insert into credito values(3,200000,600,4000,1,'activo');
+insert into credito values(4,200000,600,4000,2,'desactivo');
+
+insert into factura values(1,12/03/2017,3000);
+insert into factura values(2,13/03/2017,3000);
+insert into factura values(3,14/03/2017,3000);
+insert into factura values(4,14/03/2017,3000,1);
+
+insert into producto values(1,'galletas',3000);
+insert into producto values(2,'yogurt',3000);
+
+insert into detalle values(1,1,1,3,9000);
+insert into detalle values(1,2,1,3,9000);
+insert into detalle values(2,1,2,2,3000);
+
+show create table credito// para ver todo lo que hay en la table constraint, datos , etc.
+
+//==================================================//
+clase de 17 de abril del 2017 
+CONSULTAS
+//============================//
+cuantos clientes hay ?
+
+select count(id_ced) from cliente;
+select count(*) from cliente;
+select count(*) total from cliente;
+//=================================//
+traer el valor de la factura mas alta 
+select max(total_factura) from factura;
+//=================================//
+valor minimo
+select min(total_factura) from factura;
+//===============================//
+suma de los valores
+select sum(total_factura) from factura;
+//===============================//
+promedio de los valores
+select avg(total_factura) from factura;
+
+valor maximo,minimo y promedio
+select max(total_factura) MAXIMO , 
+ min(total_factura) MINIMO  
+,avg(total_factura) PROMEDIO from factura;
+//================================//
+traer la cantidad de registros por cada factura en detalle de factura
+
+select id_factura REGISTROS ,count(cantidad) from detalle group by id_factura;
+
+//===============================//
+
+CLASE 18 DE ABRIL 
+
+traer nombre del cliente y la cantidad de facturas que tiene cada cliente 
+//=========================================================//
+select nombre1,nombre2,apellido1,apellido2, count(id) from cliente inner join factura on(id=id_ced)
+group by id;
+
+select nombre1,nombre2,apellido1,apellido2, count(id) RESGISTRO_POR_CLIENTE from cliente 
+inner join factura on(id_ced=factura.cliente) group by id_ced;
+//=====================================================//
+trigger restar el saldo y si se pasa no permitirlo 
+
+delimiter $$
+create trigger insert_credito before insert on credito 
+for each row
+begin
+set new.monto_inicial=(select factura.total_factura from factura where new.factura=factura.id);
+set new.valor=0;
+set new.saldo=new.monto_inicial;
+end $$
+delimiter;
+//================================================//
+
+delimiter $$
+create trigger update_credito before update on credito
+for each row 
+begin
+if(new.valor <= old.saldo)then
+set new.saldo=old.saldo-new.valor;
+else
+signal sqlstate '45000' set message_text="valor excedido";
+end if;
+end $$
+delimiter ;
+
+//================================================//  
+traer los nombres de las personas que tenga un cantidad de facturas >4
+
+select nombre1,nombre2,apellido1,apellido2, count(*) cantidad from cliente 
+inner join factura on(id_ced=factura.cliente)
+group by id_ced
+having (cantidad> 4);
+
+limite de los clientes que tienen registros 
+
+select nombre1,nombre2,apellido1,apellido2, count(*) cantidad from cliente 
+inner join factura on(id_ced=factura.cliente)
+group by id_ced
+limit 2;
+
+//=======================================================//
+CREAR UN NUEVO CAMPO 
+CREAR UNA VISTA 
+
+alter table credito add column estado_credito varchar(20);
+
+create view 
+vfact as
+select cliente.nombre1 NOMBRE,credito.id_cod CREDITO,credito.estado_credito ESTADO,
+factura.id Nª_factura,detalle.total VALOR_COMPRA,sum(detalle.cantidad) TOTAL from factura
+inner join detalle on(detalle.id_factura=factura.id)
+inner join credito on(credito.factura=factura.id)
+inner join cliente on(cliente.id_ced=cliente)
+group by TOTAL;
+
+UPDATE factura set cliente=1 where factura.id=1;
+UPDATE factura set cliente=1 where factura.id=2;
+
+se puede guardar comando en un txt y guadarlo en c para despues con el comando source espacio y se arrastra el 
+archivo para que se genere a consulta 

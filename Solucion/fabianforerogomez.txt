@@ -1,0 +1,88 @@
+create database red;
+\c red; 
+create table edificio(id integer primary key,nªpiso integer,cantidad_redes integer);
+create table subred(id_subred integer primary key,rangoip integer,rango varchar(30));
+alter table subred add column nombresubred varchar(40);
+create table red(id_red integer primary key,tipo_red varchar(30),topologia varchar(30),rangoip integer,rango varchar(30));
+create table dispositivo(id_dispositivo integer primary key,nombre varchar(30), tipodispositivo varchar(30),ip varchar(20));
+create table sala(id integer ,id_dispositivos integer ,ubicacion integer,cant_dispositivos integer);
+alter table sala add column salanª integer;
+alter table sala add constraint fk_edificio_sala foreign key(id) references edificio(id);
+alter table sala add constraint fk_dispositivo_sala foreign key(id_dispositivos) references dispositivo(id_dispositivo);
+
+alter table dispositivo add column ubicacion integer;
+alter table dispositivo add constraint fk_edificio_dispositivo foreign key (ubicacion) references edificio(id);
+
+alter table edificio add column red integer;
+alter table edificio add constraint fk_red_edificio foreign key(red) references red(id_red);
+
+alter table red add column subred integer;
+alter table red add constraint fk_subred__red foreign key(subred) references subred(id_subred);
+
+alter table subred add column dis integer;
+alter table subred add constraint fk_dis_subred foreign key(dis) references dispositivo(id_dispositivo);
+
+
+insert into edificio values(1,1,1,null);
+insert into edificio values(2,2,2,null);
+insert into edificio values(3,1,0,1);
+
+insert into red values(1,'LAN','ESTRELLA',50,'192.168.1.0-192.168.1.255',null);
+insert into red values(2,'LAN','BUS',300,'192.168.1.0-192.168.2.255',null);
+
+insert into dispositivo values(1,'EQUIPO1','COMPUTADOR','192.168.1.1',2);
+insert into dispositivo values(4,'EQUIPO2','COMPUTADOR','192.168.1.2',2);
+insert into dispositivo values(5,'EQUIPO3','COMPUTADOR','192.168.4.1',1);
+insert into dispositivo values(2,'router1','router','192.168.2.1',2);
+insert into dispositivo values(3,'switch1','switch','192.168.3.1',2);
+insert into dispositivo values(6,'switch1','switch','192.168.4.250',1);
+
+insert into sala values(1,1,2,4,1);
+insert into sala values(2,2,1,2,2);
+
+insert into subred values(1,30,'128.160.1.0-128.160.1.255',2);
+insert into subred values(2,100,'128.160.2.0-128.160.2.255',6);
+insert into subred values(3,30,'128.160.1.0-128.160.1.255',2,'seguridad');
+insert into subred values(4,100,'128.160.2.0-128.160.2.255',6,'contabilidad');
+
+UPDATE subred set rangoip=40 where subred.rangoip=30;
+
+
+CREATE USER empresa PASSWORD 'password';
+ALTER ROLE empresa WITH SUPERUSER;
+GRANT SELECT ON TABLE dispositivo TO empresa;
+
+     consulta 1
+
+select dispositivo.nombre,dispositivo.tipodispositivo,dispositivo.ip,dispositivo.ubicacion from dispositivo
+inner join subred on(subred.id_subred=dispositivo.id_dispositivo);
+
+      consulta 3
+
+select red.topologia, edificio.nªpiso,red.rango from red
+left join edificio on(edificio.id=red.id_red);
+
+      consulta 2
+
+select subred.id_subred,subred.nombresubred,subred.rangoip,subred.rango from subred;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
